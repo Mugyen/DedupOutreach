@@ -28,6 +28,14 @@ eq(M.normalizeField('phone', '415.555.1234', S), '4155551234', 'phone punctuatio
 eq(M.normalizeField('phone', '123', S), '', 'too-short phone rejected');
 eq(M.normalizeField('reddit', 'https://www.reddit.com/user/CoolGuy/', S), 'coolguy', 'reddit handle');
 
+// ── canonicalization (storage cleanup) ──────────────────────────────────────
+eq(M.canonicalize('phone', '+1 (415) 555-1234'), '+14155551234', 'canonical phone strips spaces/punct, keeps +');
+eq(M.canonicalize('phone', ' 415 555 1234 '), '4155551234', 'canonical phone trims + strips spaces');
+eq(M.canonicalize('email', '  MAILTO:Jane@Acme.com '), 'jane@acme.com', 'canonical email strips mailto + lowercases');
+eq(M.canonicalize('linkedin', 'http://m.linkedin.com/in/Jane-Doe?x=1'), 'https://www.linkedin.com/in/jane-doe/', 'canonical linkedin → one form');
+eq(M.canonicalize('linkedin', 'jane-doe'), 'https://www.linkedin.com/in/jane-doe/', 'bare slug → full linkedin url');
+eq(M.canonicalize('name', '  Jane   Doe '), 'Jane Doe', 'canonical name collapses spaces');
+
 // ── person-centric dedup: one person, many identifiers ──────────────────────
 var people = [
   { id: '1', name: 'Jane Doe', company: 'Acme', linkedin: 'https://www.linkedin.com/in/jane-doe/',

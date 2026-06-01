@@ -23,6 +23,7 @@
   }
 
   function normEmail(raw, s) {
+    raw = raw.replace(/^mailto:/i, '').replace(/\s+/g, '');
     var at = raw.indexOf('@');
     if (at === -1) return s.email_lowercase ? raw.toLowerCase() : raw;
     var local = raw.slice(0, at), domain = raw.slice(at + 1);
@@ -84,6 +85,32 @@
     return { hit: false, reason: '' };
   }
 
+  /**
+   * Clean a value for STORAGE/display (distinct from match-normalization):
+   * trims, removes spaces from phones, lowercases emails, canonicalizes
+   * LinkedIn URLs — so common entry mistakes don't create messy rows.
+   */
+  function canonicalize(field, value) {
+    var raw = (value == null ? '' : String(value)).replace(/\s+/g, ' ').trim();
+    if (!raw) return '';
+    if (field === 'phone') {
+      var plus = raw.charAt(0) === '+' ? '+' : '';
+      return plus + raw.replace(/[^0-9]/g, '');
+    }
+    if (field === 'email') return raw.replace(/^mailto:/i, '').replace(/\s+/g, '').toLowerCase();
+    if (field === 'linkedin') {
+      var m = raw.match(/\/in\/([^/?#\s]+)/i);
+      if (m) return 'https://www.linkedin.com/in/' + m[1].toLowerCase() + '/';
+      if (/^[a-z0-9._-]+$/i.test(raw)) return 'https://www.linkedin.com/in/' + raw.toLowerCase() + '/';
+      return raw.replace(/\s+/g, '');
+    }
+    if (field === 'reddit') {
+      var r = raw.match(/(?:u\/|user\/)([^/?#\s]+)/i);
+      return 'u/' + (r ? r[1] : raw.replace(/^@/, ''));
+    }
+    return raw; // name, company: trimmed + single-spaced
+  }
+
   /** All existing people that are the same as candidate. */
   function findHits(candidate, contacts, settings) {
     var hits = [];
@@ -119,6 +146,7 @@
   root.Matcher = {
     IDENTIFIER_FIELDS: IDENTIFIER_FIELDS,
     normalizeField: normalizeField,
+    canonicalize: canonicalize,
     matchPerson: matchPerson,
     findHits: findHits,
     keys: keys,
