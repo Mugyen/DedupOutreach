@@ -98,8 +98,10 @@
 
   // ── Panel ───────────────────────────────────────────────────────────────
   function elt(tag, cls, text) { var n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; }
+  function remove() { var b = document.getElementById('dedup-panel'); if (b) b.remove(); F = {}; }
 
   function build() {
+    if (!STATE.enabled) return;                       // never show while disabled
     if (document.getElementById('dedup-panel')) return;
     var p = elt('div', 'dm-panel' + (collapsed ? ' collapsed' : '')); p.id = 'dedup-panel';
 
