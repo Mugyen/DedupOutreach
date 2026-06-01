@@ -1,7 +1,7 @@
 /**
  * End-to-end test of the person-centric upsert/merge logic in Code.gs, using an
  * in-memory fake of the Apps Script Sheet APIs. No deps, no Google account.
- * Run: node apps-script/upsert.test.js
+ * Run: node tests/upsert.test.js
  *
  * Proves: merge on any shared identifier, blank-fill of new identifiers,
  * original-owner preservation, updated_by tracking, custom-column survival,
@@ -40,7 +40,7 @@ var ctx = {
 };
 var counter = 1;
 vm.createContext(ctx);
-vm.runInContext(fs.readFileSync(path.join(__dirname, 'Code.gs'), 'utf8'), ctx);
+vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'apps-script', 'Code.gs'), 'utf8'), ctx);
 vm.runInContext('this.upsertContact=upsertContact;this.readContacts=readContacts;this.apiSettings=apiSettings;', ctx);
 
 var f = 0;

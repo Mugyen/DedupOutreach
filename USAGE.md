@@ -118,7 +118,7 @@ identifier links them — or turn on fuzzy matching to also merge on name+compan
 
 ```bash
 node extension/matcher.test.js   # matching engine: normalization, multi-identifier match, fuzzy
-node apps-script/upsert.test.js  # merge: blank-fill, owner preservation, custom-column survival
+node tests/upsert.test.js  # merge: blank-fill, owner preservation, custom-column survival
 ```
 
 ## Troubleshooting
