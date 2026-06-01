@@ -154,6 +154,12 @@
   td .nm{font-weight:600}
   td .sub{color:var(--faint);font-size:11.5px;margin-top:1px}
   td select{padding:6px 9px;border-radius:8px;font-weight:700;font-size:12px;border:1px solid var(--line)}
+  .del{display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line);background:var(--surface);
+    color:var(--faint);border-radius:8px;width:30px;height:30px;padding:0;transition:.14s var(--ease)}
+  .del svg{width:15px;height:15px;stroke-width:1.9}
+  .del:hover{color:var(--warn);border-color:var(--warn-soft);background:var(--warn-soft)}
+  .del:focus-visible{outline:2px solid var(--warn);outline-offset:2px}
+  .del.arm{width:auto;padding:0 11px;font-weight:700;font-size:12px;color:#fff;background:var(--warn);border-color:var(--warn)}
 
   /* stats */
   .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px}
@@ -330,7 +336,8 @@
     spin:'<svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.2-8.5"/></svg>',
     plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
     merge:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/></svg>',
-    users:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>'
+    users:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>',
+    trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>'
   };
 
   function $(id){return document.getElementById(id)}
@@ -433,7 +440,7 @@
     var cols=PREFERRED.filter(function(k){return seen[k]})
       .concat(Object.keys(seen).filter(function(k){return PREFERRED.indexOf(k)<0&&HIDDEN.indexOf(k)<0}));
     var custom=cols.filter(function(k){return PREFERRED.indexOf(k)<0});
-    var head=cols.map(function(k){return '<th'+(custom.indexOf(k)>=0?' class="cust"':'')+'>'+esc(k)+'</th>'}).join('');
+    var head=cols.map(function(k){return '<th'+(custom.indexOf(k)>=0?' class="cust"':'')+'>'+esc(k)+'</th>'}).join('')+'<th></th>';
     var body=r.contacts.map(function(c){
       return '<tr>'+cols.map(function(k){
         var isC=custom.indexOf(k)>=0, cc=isC?' class="cust"':'';
@@ -444,7 +451,7 @@
         if(k==='phone'||k==='email'||k==='linkedin'||k==='reddit')return '<td'+cc+'><span class="mono">'+esc(trunc(c[k]))+'</span></td>';
         if(k==='updated_at')return '<td'+cc+'>'+fmtDate(c[k])+'</td>';
         return '<td'+cc+'>'+esc(trunc(c[k]))+'</td>';
-      }).join('')+'</tr>';
+      }).join('')+'<td><button class="del" aria-label="Delete '+esc(c.name||'person')+'" title="Delete" onclick="delPerson(\''+esc(c.id)+'\',this)">'+ICON.trash+'</button></td></tr>';
     }).join('');
     $('peopleList').innerHTML='<table><thead><tr>'+head+'</tr></thead><tbody>'+body+'</tbody></table>';
   }
@@ -452,6 +459,15 @@
   function updateStatus(id,status,el){
     if(el){var c=HUE_COLORS[stageHue(status)];el.style.background=c[0];el.style.color=c[1]}
     google.script.run.withSuccessHandler(function(){toast('Stage updated')}).apiUpdate({id:id,status:status,added_by:$('me').value});
+  }
+  function delPerson(id,el){
+    if(el.dataset.armed==='1'){
+      el.disabled=true;
+      google.script.run.withSuccessHandler(function(r){toast(r.ok?'Person deleted':'Error: '+r.error);doSearch()}).apiDelete({id:id});
+      return;
+    }
+    el.dataset.armed='1'; el.classList.add('arm'); el.innerHTML='Delete?';
+    clearTimeout(el._t); el._t=setTimeout(function(){el.dataset.armed='0';el.classList.remove('arm');el.innerHTML=ICON.trash},2600);
   }
 
   // ── Stats ────────────────────────────────────────────────────

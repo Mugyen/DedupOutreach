@@ -14,7 +14,9 @@ function makeSheet() {
     _d: [],
     getLastRow() { return this._d.length; },
     getLastColumn() { return this._d.reduce(function (m, r) { return Math.max(m, r.length); }, 0); },
+    getMaxRows() { return Math.max(1000, this._d.length); },
     appendRow(r) { this._d.push(r.slice()); },
+    deleteRow(n) { this._d.splice(n - 1, 1); },
     getDataRange() { return this.getRange(1, 1, Math.max(1, this._d.length), Math.max(1, this.getLastColumn())); },
     getRange(r, c, nr, nc) {
       nr = nr || 1; nc = nc || 1; var sh = this;
@@ -25,7 +27,8 @@ function makeSheet() {
           return o;
         },
         setValues(v) { for (var i = 0; i < v.length; i++) { sh._d[r - 1 + i] = sh._d[r - 1 + i] || []; for (var j = 0; j < v[i].length; j++) sh._d[r - 1 + i][c - 1 + j] = v[i][j]; } },
-        setValue(val) { sh._d[r - 1] = sh._d[r - 1] || []; sh._d[r - 1][c - 1] = val; }
+        setValue(val) { sh._d[r - 1] = sh._d[r - 1] || []; sh._d[r - 1][c - 1] = val; },
+        setNumberFormat() { return this; }
       };
     }
   };
@@ -35,13 +38,14 @@ var sheets = {};
 var ctx = {
   SpreadsheetApp: { getActive() { return { getSheetByName(n) { return sheets[n] || null; }, insertSheet(n) { return sheets[n] = makeSheet(); } }; } },
   LockService: { getScriptLock() { return { waitLock() {}, releaseLock() {} }; } },
+  PropertiesService: { getDocumentProperties() { var s = {}; return { getProperty: function (k) { return s[k] || null; }, setProperty: function (k, v) { s[k] = v; } }; } },
   Utilities: { getUuid() { return 'id' + (counter++); } },
   Date: Date, JSON: JSON, Math: Math, String: String, Number: Number, Object: Object, isNaN: isNaN, console: console
 };
 var counter = 1;
 vm.createContext(ctx);
 vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'apps-script', 'Code.gs'), 'utf8'), ctx);
-vm.runInContext('this.upsertContact=upsertContact;this.readContacts=readContacts;this.apiSettings=apiSettings;', ctx);
+vm.runInContext('this.upsertContact=upsertContact;this.readContacts=readContacts;this.apiSettings=apiSettings;this.deleteContact=deleteContact;', ctx);
 
 var f = 0;
 function ok(c, m) { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) f++; }
@@ -76,6 +80,14 @@ ok(String(jane.phone).indexOf('9999') > -1, 'phone added to existing record');
 ctx.apiSettings({ fuzzy_name_company: true });
 r = ctx.upsertContact({ added_by: 'Vedant', name: 'Bob', company: 'Globex', linkedin: 'linkedin.com/in/bob-x' });
 ok(r.merged && r.reason === 'name+company', 'fuzzy name+company merges despite no shared identifier');
+
+// delete a person by id
+var before = ctx.readContacts().length;
+var bobId = ctx.readContacts().find(function (x) { return x.name === 'Bob'; }).id;
+var dr = ctx.deleteContact({ id: bobId });
+ok(dr.ok && ctx.readContacts().length === before - 1, 'deleteContact removes the row');
+ok(!ctx.readContacts().some(function (x) { return x.id === bobId; }), 'deleted person is gone');
+ok(!ctx.deleteContact({ id: 'nope' }).ok, 'deleting unknown id fails cleanly');
 
 console.log(f ? ('\n' + f + ' FAILED') : '\nAll passed.');
 process.exit(f ? 1 : 0);

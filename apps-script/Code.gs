@@ -56,6 +56,7 @@ function doPost(e) {
   try {
     if (body.action === 'add' || body.action === 'upsert') return json(upsertContact(body));
     if (body.action === 'update') return json(updateContact(body));
+    if (body.action === 'delete') return json(deleteContact(body));
     if (body.action === 'settings') return json(writeSettings(body.settings || {}));
     return json({ ok: false, error: 'unknown action: ' + body.action });
   } finally { lock.releaseLock(); }
@@ -92,7 +93,16 @@ function ensureHeaders(sh) {
     sh.getRange(1, headers.length + 1, 1, missing.length).setValues([missing]);
     headers = headers.concat(missing);
   }
+  ensureTextFormat(sh, headers.length);
   return headers;
+}
+
+/** Force the data area to plain text so "+1..." phones aren't read as formulas. */
+function ensureTextFormat(sh, ncols) {
+  var props = PropertiesService.getDocumentProperties();
+  if (props.getProperty('txtfmt2')) return;
+  sh.getRange(1, 1, sh.getMaxRows(), Math.max(ncols, MANAGED_HEADERS.length)).setNumberFormat('@');
+  props.setProperty('txtfmt2', '1');
 }
 
 function readWithRows(sh, headers) {
@@ -221,6 +231,19 @@ function upsertContact(body) {
   return { ok: true, merged: false, id: id };
 }
 
+function deleteContact(body) {
+  var sh = sheet(CONTACTS_SHEET);
+  var headers = ensureHeaders(sh);
+  var last = sh.getLastRow();
+  if (last < 2) return { ok: false, error: 'no rows' };
+  var idCol = headers.indexOf('id') + 1;
+  var ids = sh.getRange(2, idCol, last - 1, 1).getValues();
+  for (var i = 0; i < ids.length; i++) {
+    if (String(ids[i][0]) === String(body.id)) { sh.deleteRow(i + 2); return { ok: true, id: body.id }; }
+  }
+  return { ok: false, error: 'id not found: ' + body.id };
+}
+
 function candidateFrom(body) {
   return {
     name: body.name || '', company: body.company || '', phone: body.phone || '',
@@ -251,6 +274,7 @@ function updateContact(body) {
 function apiBootstrap() { return { contacts: readContacts(), settings: readSettings() }; }
 function apiUpsert(body) { return upsertContact(body); }
 function apiUpdate(body) { return updateContact(body); }
+function apiDelete(body) { return deleteContact(body); }
 function apiSettings(s) { return writeSettings(s); }
 
 function apiCheck(candidate) {
