@@ -22,8 +22,9 @@
     var s = {};
     ['contacts', 'settings', 'me', 'activeMode'].forEach(function (k) { if (ch[k]) s[k] = ch[k].newValue; });
     apply(s);
-    if (ch.settings) { fillSelect(F.source, [''].concat(STATE.sources), F.source.value, true); fillSelect(F.status, STATE.stages, F.status.value, false); }
-    if (ch.contacts) check();
+    if (ch.settings && F.source) { fillSelect(F.source.el, [''].concat(STATE.sources), F.source.get(), true); fillSelect(F.status.el, STATE.stages, F.status.get(), false); }
+    if (ch.activeMode !== undefined) { lastDetectKey = null; dirty = false; refreshFromPage(); }  // re-render on mode switch
+    else if (ch.contacts) check();
   });
   function apply(s) {
     if (s.contacts !== undefined) STATE.contacts = s.contacts || [];

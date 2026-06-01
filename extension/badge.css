@@ -1,51 +1,56 @@
-/* DedupManager persistent bar. Scoped under #dedup-panel. */
+/* DedupManager persistent bar — monochrome. Scoped under #dedup-panel. */
 #dedup-panel.dm-panel{
   position:fixed; right:18px; bottom:18px; z-index:2147483647; width:300px;
-  background:#fff; color:#16181d; border:1px solid #e6e8ec; border-radius:14px;
-  box-shadow:0 10px 34px rgba(16,24,40,.18);
+  background:#fff; color:#0a0a0a; border:1px solid #e2e2e2; border-radius:14px;
+  box-shadow:0 10px 34px rgba(0,0,0,.16);
   font-family:'Hanken Grotesk',system-ui,-apple-system,sans-serif; font-size:13px; line-height:1.45;
   animation:dm-in .16s ease-out; overflow:hidden;
 }
 @keyframes dm-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){#dedup-panel.dm-panel{animation:none}}
 
-#dedup-panel .dm-h{display:flex;align-items:center;gap:8px;padding:11px 13px;cursor:default;border-bottom:1px solid #eef0f4}
+#dedup-panel .dm-h{display:flex;align-items:center;gap:8px;padding:11px 13px;cursor:default;border-bottom:1px solid #eee}
 #dedup-panel.collapsed .dm-h{border-bottom:0;cursor:pointer}
-#dedup-panel .dm-logo{width:22px;height:22px;border-radius:7px;background:linear-gradient(140deg,#6d6df0,#4a45c2);
+#dedup-panel .dm-logo{width:22px;height:22px;border-radius:7px;background:#0a0a0a;
   color:#fff;font-weight:800;font-size:12px;display:grid;place-items:center;flex:none}
 #dedup-panel .dm-name{font-weight:800;font-size:13px;letter-spacing:-.01em;flex:1}
-#dedup-panel .dm-mode{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;padding:2px 7px;border-radius:20px}
-#dedup-panel .dm-mode.on{background:#ecedfb;color:#4a45c2}
-#dedup-panel .dm-mode.off{background:#eef0f3;color:#6a7180}
-#dedup-panel .dm-min{cursor:pointer;color:#9aa1ae;font-size:17px;line-height:1;width:18px;text-align:center;font-weight:700}
-#dedup-panel .dm-min:hover{color:#16181d}
+#dedup-panel .dm-mode{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;padding:2px 7px;border-radius:20px;border:1px solid transparent}
+#dedup-panel .dm-mode.on{background:#0a0a0a;color:#fff}
+#dedup-panel .dm-mode.off{background:#fff;color:#0a0a0a;border-color:#d4d4d4}
+#dedup-panel .dm-min{cursor:pointer;color:#9a9a9a;font-size:17px;line-height:1;width:18px;text-align:center;font-weight:700}
+#dedup-panel .dm-min:hover{color:#0a0a0a}
 #dedup-panel.collapsed .dm-b{display:none}
 
 #dedup-panel .dm-b{padding:12px 13px 13px}
-#dedup-panel .dm-chip{font-size:12px;font-weight:700;padding:7px 10px;border-radius:9px;margin-bottom:10px;display:block}
-#dedup-panel .dm-chip.ok{background:#e3f6ee;color:#067a52}
-#dedup-panel .dm-chip.warn{background:#fdecea;color:#b42318}
-#dedup-panel .dm-chip.idle{background:#f4f5f8;color:#69707e}
+#dedup-panel .dm-chip{font-size:12px;font-weight:700;padding:8px 11px;border-radius:9px;margin-bottom:10px;display:flex;align-items:center;gap:7px}
+#dedup-panel .dm-chip:before{content:"";width:8px;height:8px;border-radius:50%;flex:none}
+/* not in CRM = light/outlined, in CRM = solid black (high attention), idle = grey */
+#dedup-panel .dm-chip.ok{background:#f4f4f4;color:#0a0a0a;border:1px solid #e2e2e2}
+#dedup-panel .dm-chip.ok:before{background:#0a0a0a}
+#dedup-panel .dm-chip.warn{background:#0a0a0a;color:#fff}
+#dedup-panel .dm-chip.warn:before{background:#fff}
+#dedup-panel .dm-chip.idle{background:#f4f4f4;color:#6b6b6b}
+#dedup-panel .dm-chip.idle:before{background:#b4b4b4}
 
 #dedup-panel .dm-f{display:block;margin-bottom:8px}
-#dedup-panel .dm-l{display:block;font-size:10.5px;font-weight:700;color:#69707e;margin-bottom:3px;text-transform:uppercase;letter-spacing:.03em}
+#dedup-panel .dm-l{display:block;font-size:10.5px;font-weight:700;color:#6b6b6b;margin-bottom:3px;text-transform:uppercase;letter-spacing:.03em}
 #dedup-panel .dm-f input,#dedup-panel .dm-f select{
   width:100%;box-sizing:border-box;font-family:inherit;font-size:13px;padding:8px 10px;
-  border:1px solid #e6e8ec;border-radius:9px;outline:none;background:#fff;color:#16181d}
+  border:1px solid #e2e2e2;border-radius:9px;outline:none;background:#fff;color:#0a0a0a}
 #dedup-panel .dm-f input.big{font-size:13.5px;padding:9px 11px}
-#dedup-panel .dm-f input:focus,#dedup-panel .dm-f select:focus{border-color:#5b5bd6;box-shadow:0 0 0 3px #ecedfb}
+#dedup-panel .dm-f input:focus,#dedup-panel .dm-f select:focus{border-color:#0a0a0a;box-shadow:0 0 0 3px rgba(10,10,10,.1)}
 
 #dedup-panel .dm-actions{display:flex;justify-content:flex-end;margin:-2px 0 8px}
-#dedup-panel .dm-more{margin:4px 0 10px;border-top:1px solid #eef0f4;padding-top:8px}
-#dedup-panel .dm-more>summary{cursor:pointer;font-size:11.5px;font-weight:700;color:#4a45c2;list-style:none;margin-bottom:8px}
+#dedup-panel .dm-more{margin:4px 0 10px;border-top:1px solid #eee;padding-top:8px}
+#dedup-panel .dm-more>summary{cursor:pointer;font-size:11.5px;font-weight:700;color:#0a0a0a;list-style:none;margin-bottom:8px}
 #dedup-panel .dm-more>summary::-webkit-details-marker{display:none}
 #dedup-panel .dm-more>summary:before{content:"▸ ";}
 #dedup-panel .dm-more[open]>summary:before{content:"▾ ";}
 
 #dedup-panel .dm-btn{width:100%;border:0;border-radius:9px;padding:10px;font-family:inherit;font-weight:700;
-  font-size:13px;cursor:pointer;background:#5b5bd6;color:#fff;transition:filter .15s}
-#dedup-panel .dm-btn:hover{filter:brightness(1.06)}
-#dedup-panel .dm-btn:disabled{opacity:.5;cursor:not-allowed}
-#dedup-panel .dm-btn.ghost{width:auto;background:#fff;color:#16181d;border:1px solid #e6e8ec;padding:7px 14px;font-size:12px}
-#dedup-panel .dm-btn.ghost:hover{background:#f6f7f9;filter:none}
-#dedup-panel .dm-msg{font-size:11.5px;color:#69707e;min-height:15px;margin-top:7px;font-weight:600;text-align:center}
+  font-size:13px;cursor:pointer;background:#0a0a0a;color:#fff;transition:opacity .15s}
+#dedup-panel .dm-btn:hover{opacity:.85}
+#dedup-panel .dm-btn:disabled{opacity:.4;cursor:not-allowed}
+#dedup-panel .dm-btn.ghost{width:auto;background:#fff;color:#0a0a0a;border:1px solid #d4d4d4;padding:7px 14px;font-size:12px}
+#dedup-panel .dm-btn.ghost:hover{background:#f4f4f4;opacity:1}
+#dedup-panel .dm-msg{font-size:11.5px;color:#6b6b6b;min-height:15px;margin-top:7px;font-weight:600;text-align:center}

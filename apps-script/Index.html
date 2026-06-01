@@ -12,14 +12,14 @@
 <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#f4f5f8; --surface:#ffffff; --surface-2:#fafbfc;
-    --ink:#16181d; --muted:#69707e; --faint:#9aa1ae; --line:#e7eaef; --line-2:#eef0f4;
-    --iris:#5b5bd6; --iris-ink:#4a45c2; --iris-soft:#ecedfb;
-    --ok:#0e9f6e; --ok-soft:#e3f6ee; --warn:#d92d20; --warn-soft:#fdecea; --amber:#9a6406;
+    --bg:#f6f6f6; --surface:#ffffff; --surface-2:#fafafa;
+    --ink:#0a0a0a; --muted:#6b6b6b; --faint:#9a9a9a; --line:#e6e6e6; --line-2:#efefef;
+    --iris:#0a0a0a; --iris-ink:#0a0a0a; --iris-soft:#f0f0f0;
+    --ok:#0a0a0a; --ok-soft:#f4f4f4; --warn:#0a0a0a; --warn-soft:#0a0a0a; --amber:#3a3a3a;
     --r:12px; --r-lg:16px;
-    --sh-sm:0 1px 2px rgba(18,22,33,.05);
-    --sh:0 1px 3px rgba(18,22,33,.06), 0 8px 24px rgba(18,22,33,.06);
-    --sh-pop:0 12px 40px rgba(18,22,33,.14);
+    --sh-sm:0 1px 2px rgba(0,0,0,.05);
+    --sh:0 1px 3px rgba(0,0,0,.06), 0 8px 24px rgba(0,0,0,.06);
+    --sh-pop:0 12px 40px rgba(0,0,0,.16);
     --ease:cubic-bezier(.2,.7,.2,1);
   }
   *{box-sizing:border-box}
@@ -38,7 +38,7 @@
   aside{background:var(--surface);border-right:1px solid var(--line);
     display:flex;flex-direction:column;padding:18px 14px;position:sticky;top:0;height:100vh}
   .brand{display:flex;align-items:center;gap:10px;padding:6px 8px 18px}
-  .brand .logo{width:32px;height:32px;border-radius:9px;background:linear-gradient(140deg,#6d6df0,#4a45c2);
+  .brand .logo{width:32px;height:32px;border-radius:9px;background:#0a0a0a;
     display:grid;place-items:center;color:#fff;box-shadow:0 4px 12px rgba(91,91,214,.35)}
   .brand b{font-size:15.5px;font-weight:800;letter-spacing:-.02em;display:block;line-height:1.1}
   .brand span{font-size:11px;color:var(--faint);font-weight:500}
@@ -121,9 +121,9 @@
     animation:rise .22s var(--ease) both}
   .chip{display:inline-flex;align-items:center;gap:7px;font-weight:700;font-size:12.5px;padding:6px 11px;border-radius:20px}
   .chip svg{width:14px;height:14px;stroke-width:2.2}
-  .chip.ok{background:var(--ok-soft);color:#067a52}
-  .chip.warn{background:var(--warn-soft);color:#b42318}
-  .chip.idle{background:var(--surface-2);color:var(--muted)}
+  .chip.ok{background:#f2f2f2;color:#0a0a0a;border:1px solid var(--line)}
+  .chip.warn{background:#0a0a0a;color:#fff}
+  .chip.idle{background:var(--surface-2);color:var(--muted);border:1px solid var(--line)}
   .chip .spin{animation:spin .8s linear infinite}
   @keyframes spin{to{transform:rotate(360deg)}}
   .grow{flex:1}
@@ -147,10 +147,10 @@
     letter-spacing:.05em;color:var(--faint);font-weight:700;padding:10px 12px;border-bottom:1px solid var(--line)}
   th.cust{color:var(--amber)}
   tbody td{padding:11px 12px;border-bottom:1px solid var(--line-2);font-size:13px;vertical-align:middle}
-  tbody td.cust{background:#fffaf0}
+  tbody td.cust{background:#f7f7f7}
   tbody tr{transition:background .12s}
   tbody tr:hover td{background:var(--surface-2)}
-  tbody tr:hover td.cust{background:#fdf3df}
+  tbody tr:hover td.cust{background:#efefef}
   td .nm{font-weight:600}
   td .sub{color:var(--faint);font-size:11.5px;margin-top:1px}
   td select{padding:6px 9px;border-radius:8px;font-weight:700;font-size:12px;border:1px solid var(--line)}
@@ -333,9 +333,10 @@
   var STAGE_MAP={'new':'slate','contacted':'sky','replied':'violet','meeting':'amber','interested':'violet',
     'qualified':'teal','negotiating':'amber','won':'emerald','closed':'emerald','lost':'rose','no-reply':'slate','no reply':'slate'};
   var HUES=['slate','sky','violet','amber','emerald','rose','teal','indigo'];
-  var HUE_COLORS={slate:['#edf0f4','#48536b'],sky:['#e5f0fd','#0b68c4'],violet:['#f0ecfd','#6b45d8'],
-    amber:['#fbf0da','#9a6406'],emerald:['#e1f5ec','#08875a'],rose:['#fbe9e8','#c42b26'],
-    teal:['#def3f1','#0b7a74'],indigo:['#e9e9fb','#4a45c2']};
+  // Monochrome ramp: early stages light grey → Won solid black; Lost outlined.
+  var HUE_COLORS={slate:['#f0f0f0','#5a5a5a'],sky:['#e8e8e8','#4a4a4a'],violet:['#dedede','#3a3a3a'],
+    amber:['#d2d2d2','#2a2a2a'],emerald:['#0a0a0a','#ffffff'],rose:['#f7f7f7','#9a9a9a'],
+    teal:['#d8d8d8','#2f2f2f'],indigo:['#c8c8c8','#1f1f1f']};
 
   var ICON={
     check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.1V12a10 10 0 1 1-5.9-9.1"/><path d="m9 11 3 3L22 4"/></svg>',
@@ -497,7 +498,7 @@
     var keys=Object.keys(obj).sort(function(a,b){return obj[b]-obj[a]});
     if(!keys.length)return '<div class="empty">No data yet.</div>';
     var max=Math.max.apply(null,keys.map(function(k){return obj[k]}));
-    return keys.map(function(k){var col=byStage?HUE_COLORS[stageHue(k)][1]:'var(--iris)';
+    return keys.map(function(k){var col='var(--ink)';
       return '<div class="barrow"><div class="k">'+esc(k)+'</div><div class="bartrack">'+
         '<div class="barfill" style="width:'+Math.max(5,obj[k]/max*100)+'%;background:'+col+'"></div></div>'+
         '<div class="v tnum">'+obj[k]+'</div></div>'}).join('');
