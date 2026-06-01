@@ -34,7 +34,7 @@ async function sync() {
     var data = await res.json();
     if (data.ok) {
       var patch = { contacts: data.contacts, settings: data.settings, lastSync: Date.now() };
-      if (data.sheetUrl) patch.sheetUrl = data.sheetUrl;
+      if (/^https:\/\//i.test(data.sheetUrl || '')) patch.sheetUrl = data.sheetUrl;  // only trust https
       await chrome.storage.local.set(patch);
     }
   } catch (e) { /* keep last good cache */ }

@@ -2,6 +2,13 @@ var DEFAULT_TEAM = ['Vedant', 'Rahul', 'Saksham']; // fallback if no team in con
 
 var $ = function (id) { return document.getElementById(id); };
 
+// Only assign http(s) URLs to a link href (guards against javascript: etc.).
+function setLink(id, url) {
+  var ok = false;
+  try { var u = new URL(url); ok = (u.protocol === 'https:' || u.protocol === 'http:'); } catch (e) {}
+  if (ok) { $(id).href = url; $(id).style.display = ''; } else { $(id).style.display = 'none'; }
+}
+
 function getTeam(stored) {
   return (Array.isArray(stored) && stored.length) ? stored : DEFAULT_TEAM;
 }
@@ -29,9 +36,8 @@ function load() {
       if (s.me !== me) chrome.storage.local.set({ me: me });
       $('enabled').checked = s.barEnabled !== false;
       $('activeRow').style.opacity = $('enabled').checked ? '1' : '.45';
-      if (s.apiUrl) $('openDash').href = s.apiUrl;
-      if (s.sheetUrl) { $('openSheet').href = s.sheetUrl; $('openSheet').style.display = ''; }
-      else $('openSheet').style.display = 'none';
+      setLink('openDash', s.apiUrl);
+      setLink('openSheet', s.sheetUrl);
       $('apiUrl').value = s.apiUrl || '';
       $('apiKey').value = s.apiKey || '';
       $('active').checked = s.activeMode !== false;
