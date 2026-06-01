@@ -38,9 +38,17 @@ fi
 KEY="$(sed -n "s/.*TEAM_API_KEY = '\\([^']*\\)'.*/\\1/p" "$CONFIG" | head -1)"
 [ -n "$KEY" ] || die "Could not read TEAM_API_KEY from $CONFIG"
 
-# ── 2. Web app manifest (gitignored, generated) ─────────────────────────────
+# ── 2. Create the bound Sheet + script on first run ─────────────────────────
+# (Done before writing our manifest — clasp create can object to a pre-existing
+#  appsscript.json in the root dir.)
+if [ ! -f ".clasp.json" ]; then
+  say "Creating a new Google Sheet + bound Apps Script project…"
+  clasp create --type sheets --title "DedupManager DB" --rootDir "$APPDIR"
+fi
+
+# ── 3. Web app manifest (gitignored, generated) ─────────────────────────────
 # Configures the deployment as a public-URL web app that runs as you, so the
-# clasp deploy below needs no manual click-through in the Apps Script dialog.
+# deploy below needs no manual click-through in the Apps Script dialog.
 cat > "$MANIFEST" <<'EOF'
 {
   "timeZone": "Etc/GMT",
@@ -52,21 +60,6 @@ cat > "$MANIFEST" <<'EOF'
   }
 }
 EOF
-
-# ── 3. Create the bound Sheet + script on first run ─────────────────────────
-if [ ! -f ".clasp.json" ]; then
-  say "Creating a new Google Sheet + bound Apps Script project…"
-  # A default manifest is fetched into rootDir; restore ours afterwards.
-  clasp create --type sheets --title "DedupManager DB" --rootDir "$APPDIR"
-  cat > "$MANIFEST" <<'EOF'
-{
-  "timeZone": "Etc/GMT",
-  "exceptionLogging": "STACKDRIVER",
-  "runtimeVersion": "V8",
-  "webapp": { "executeAs": "USER_DEPLOYING", "access": "ANYONE_ANONYMOUS" }
-}
-EOF
-fi
 
 # ── 4. Push code ────────────────────────────────────────────────────────────
 say "Pushing code…"
