@@ -1,4 +1,4 @@
-var DEFAULT_TEAM = ['Aman', 'Vedant', 'Teammate 3']; // fallback if no team in config
+var DEFAULT_TEAM = ['Vedant', 'Rahul', 'Saksham']; // fallback if no team in config
 
 var $ = function (id) { return document.getElementById(id); };
 

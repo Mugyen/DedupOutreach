@@ -84,7 +84,7 @@ fi
 URL="https://script.google.com/macros/s/$DEPID/exec"
 
 # ── 6. Shareable config string for the extension ────────────────────────────
-TEAM_JSON='["Aman","Vedant","Teammate 3"]'   # edit to your names
+TEAM_JSON='["Vedant","Rahul","Saksham"]'   # edit to your names
 CFG_JSON="$(printf '{"apiUrl":"%s","apiKey":"%s","team":%s}' "$URL" "$KEY" "$TEAM_JSON")"
 CFG_STR="$(printf '%s' "$CFG_JSON" | base64 | tr -d '\n')"
 
