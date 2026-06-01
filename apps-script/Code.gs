@@ -47,7 +47,7 @@ function doGet(e) {
   if (action === 'log') return json({ ok: true, contacts: readContacts() });
   if (action === 'settings') return json({ ok: true, settings: readSettings() });
   if (action === 'bootstrap')
-    return json({ ok: true, contacts: readContacts(), settings: readSettings() });
+    return json({ ok: true, contacts: readContacts(), settings: readSettings(), sheetUrl: sheetUrl_() });
   return json({ ok: false, error: 'unknown action: ' + action });
 }
 
@@ -76,6 +76,8 @@ function authed(e) {
 function book() {
   return SHEET_ID ? SpreadsheetApp.openById(SHEET_ID) : SpreadsheetApp.getActive();
 }
+
+function sheetUrl_() { try { return book().getUrl(); } catch (e) { return ''; } }
 
 function sheet(name) {
   var ss = book();

@@ -33,9 +33,9 @@ async function sync() {
     var res = await fetch(url, { method: 'GET' });
     var data = await res.json();
     if (data.ok) {
-      await chrome.storage.local.set({
-        contacts: data.contacts, settings: data.settings, lastSync: Date.now()
-      });
+      var patch = { contacts: data.contacts, settings: data.settings, lastSync: Date.now() };
+      if (data.sheetUrl) patch.sheetUrl = data.sheetUrl;
+      await chrome.storage.local.set(patch);
     }
   } catch (e) { /* keep last good cache */ }
 }

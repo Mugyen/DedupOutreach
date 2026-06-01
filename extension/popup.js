@@ -19,7 +19,7 @@ function fillTeam(team, selected) {
 
 function load() {
   chrome.storage.local.get(
-    ['me', 'apiUrl', 'apiKey', 'activeMode', 'lastSync', 'contacts', 'team'],
+    ['me', 'apiUrl', 'apiKey', 'activeMode', 'barEnabled', 'lastSync', 'contacts', 'team', 'sheetUrl'],
     function (s) {
       var team = getTeam(s.team);
       // Default "me" to the first teammate and PERSIST it, so the content
@@ -30,6 +30,8 @@ function load() {
       $('enabled').checked = s.barEnabled !== false;
       $('activeRow').style.opacity = $('enabled').checked ? '1' : '.45';
       if (s.apiUrl) $('openDash').href = s.apiUrl;
+      if (s.sheetUrl) { $('openSheet').href = s.sheetUrl; $('openSheet').style.display = ''; }
+      else $('openSheet').style.display = 'none';
       $('apiUrl').value = s.apiUrl || '';
       $('apiKey').value = s.apiKey || '';
       $('active').checked = s.activeMode !== false;
