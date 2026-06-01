@@ -24,11 +24,11 @@
 #dedup-panel .dm-b{padding:12px 13px 13px}
 #dedup-panel .dm-chip{font-size:12px;font-weight:700;padding:8px 11px;border-radius:9px;margin-bottom:10px;display:flex;align-items:center;gap:7px}
 #dedup-panel .dm-chip:before{content:"";width:8px;height:8px;border-radius:50%;flex:none}
-/* not in CRM = light/outlined, in CRM = solid black (high attention), idle = grey */
-#dedup-panel .dm-chip.ok{background:#f4f4f4;color:#0a0a0a;border:1px solid #e2e2e2}
-#dedup-panel .dm-chip.ok:before{background:#0a0a0a}
-#dedup-panel .dm-chip.warn{background:#0a0a0a;color:#fff}
-#dedup-panel .dm-chip.warn:before{background:#fff}
+/* status signal stays in colour even though the rest is monochrome */
+#dedup-panel .dm-chip.ok{background:#e7f6ee;color:#067a52;border:1px solid #c5ebd5}
+#dedup-panel .dm-chip.ok:before{background:#0e9f6e}
+#dedup-panel .dm-chip.warn{background:#fdecea;color:#c0271d;border:1px solid #f7cfca}
+#dedup-panel .dm-chip.warn:before{background:#e0402f}
 #dedup-panel .dm-chip.idle{background:#f4f4f4;color:#6b6b6b}
 #dedup-panel .dm-chip.idle:before{background:#b4b4b4}
 
