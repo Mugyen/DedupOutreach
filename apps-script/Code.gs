@@ -55,6 +55,7 @@ function doPost(e) {
   var body = {};
   try { body = JSON.parse(e.postData.contents); } catch (err) {}
   if (!authed({ parameter: body })) return json({ ok: false, error: 'unauthorized' });
+  if (body.action === 'check') return json(apiCheck(body));   // read-only, live — no lock needed
   var lock = LockService.getScriptLock();
   lock.waitLock(20000);
   try {

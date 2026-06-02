@@ -142,6 +142,9 @@
     [F.link, F.phone, F.email].forEach(function (f) {
       f.el.addEventListener('input', function () { dirty = true; if (STATE.active) debouncedCheck(); });
     });
+    [F.name, F.company].forEach(function (f) {           // editing these must not be clobbered
+      f.el.addEventListener('input', function () { dirty = true; });
+    });
   }
   function field(parent, label, ph, big) {
     var w = elt('label', 'dm-f'); w.appendChild(elt('span', 'dm-l', label));
@@ -172,18 +175,21 @@
     F.checkRow.style.display = STATE.active ? 'none' : '';   // auto = continuous, no button
     if (!STATE.active) { setChip('idle', 'Manual — type & check'); return; }
     var d = detect();
-    var dk = d ? JSON.stringify(d) : 'none@' + location.href;
-    if (dirty && dk === lastDetectKey) return;
+    // Key the profile on its identifiers + path, NOT on name/company (those DOM
+    // bits mutate constantly on LinkedIn and would otherwise re-trigger fills).
+    var dk = d ? JSON.stringify([d.link, d.email, d.reddit, d.phone]) : 'none@' + location.pathname;
+    if (dk === lastDetectKey) return;       // same profile already handled → never re-fill/clobber what you're editing
     lastDetectKey = dk;
+    dirty = false;
     if (d) {
-      dirty = false;
       F.link.set(d.link || '');
       F.email.set(d.email || '');
       F.name.set(d.name || '');
       F.company.set(d.company || '');
       if (d.source) F.source.set(d.source);
-      check();
+      check();                               // ONE live lookup per new profile
     } else {
+      F.link.set(''); F.phone.set(''); F.email.set('');
       setChip('idle', 'No profile here — type to check');
     }
   }
@@ -195,15 +201,22 @@
   function hasId(c) { return c.link || c.phone || c.email; }
 
   var ct = null;
-  function debouncedCheck() { clearTimeout(ct); ct = setTimeout(function () { check(); }, 400); }
+  function debouncedCheck() { clearTimeout(ct); ct = setTimeout(check, 400); }
   function check() {
     var c = candidate();
     if (!hasId(c)) { setChip('idle', 'Type a link / phone / email'); return; }
     setChip('idle', 'Checking…');
-    var res = Matcher.findHits(c, STATE.contacts, STATE.settings);
-    if (res.hits.length) {
-      var h = res.hits[0];
-      setChip('warn', 'In CRM: ' + (h.contact.name || 'match') + ' · ' + (h.contact.added_by || '?') + ' · ' + (h.contact.status || ''));
+    var my = ++checkSeq;                                  // newer check supersedes an older one
+    chrome.runtime.sendMessage({ type: 'check', fields: c }, function (r) {
+      if (my !== checkSeq) return;                        // stale reply — ignore
+      if (!r || r.ok !== true) { setChip('idle', 'Couldn’t reach CRM — saving still dedupes'); return; }
+      renderChip(r.hits || []);
+    });
+  }
+  function renderChip(hits) {
+    if (hits.length) {
+      var p = hits[0].contact;
+      setChip('warn', 'In CRM: ' + (p.name || 'match') + ' · ' + (p.added_by || '?') + ' · ' + (p.status || ''));
       F.save.textContent = 'Merge & update as ' + (STATE.me || '—');
     } else {
       setChip('ok', 'Not in CRM yet'); F.save.textContent = 'Log contact as ' + (STATE.me || '—');

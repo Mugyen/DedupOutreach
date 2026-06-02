@@ -54,6 +54,12 @@ async function post(body) {
 
 chrome.runtime.onMessage.addListener(function (msg, _sender, reply) {
   if (msg.type === 'sync') { sync().then(function () { reply({ ok: true }); }); return true; }
+  if (msg.type === 'check') {                       // live dedup read, straight from the Sheet
+    var b = { action: 'check' }, cf = msg.fields || {};
+    for (var ck in cf) b[ck] = cf[ck];
+    post(b).then(function (r) { reply(r); });
+    return true;
+  }
   if (msg.type === 'add') {
     var body = { action: 'add', added_by: msg.me };
     var f = msg.fields || {};
