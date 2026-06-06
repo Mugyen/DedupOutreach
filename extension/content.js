@@ -185,14 +185,14 @@
     applyPos();
     chrome.storage.local.set({ barPos: STATE.pos });
   }
-  // Collapse ⇄ expand around the quadrant corner of wherever it sits now: the
-  // circle forms at that corner and expanding grows back inward from it. That
-  // corner is the fixed pivot, so it always returns to the same place.
+  // Collapse ⇄ expand around the SAME stored corner. The circle and the panel
+  // share that corner, so we only re-apply it — we never re-measure the live
+  // rect (re-deriving each toggle accumulates sub-pixel drift). No stored pos →
+  // both states fall back to the CSS default corner. Result: zero drift.
   function toggleCollapse() {
-    var cr = F.panel.getBoundingClientRect();         // where it is right now
     collapsed = !collapsed;
     F.panel.classList.toggle('collapsed', collapsed);
-    anchorFromRect(cr);                               // pivot on this quadrant's corner
+    applyPos();                                       // pivot on the fixed corner
     if (F.head) F.head.title = 'Drag to move · click to ' + (collapsed ? 'expand' : 'minimize');
     chrome.storage.local.set({ barCollapsed: collapsed });
   }
@@ -202,9 +202,12 @@
       e.preventDefault();
       var r = panel.getBoundingClientRect(), ox = r.left, oy = r.top, sx = e.clientX, sy = e.clientY;
       dragMoved = false;
-      panel.style.left = ox + 'px'; panel.style.top = oy + 'px'; panel.style.right = 'auto'; panel.style.bottom = 'auto';
+      // Only switch to left/top positioning once an actual drag begins — a pure
+      // tap must leave the corner anchoring untouched (otherwise it leaks and
+      // shifts the bar on collapse).
       function mm(ev) {
-        if (Math.abs(ev.clientX - sx) + Math.abs(ev.clientY - sy) > 4) dragMoved = true;
+        if (Math.abs(ev.clientX - sx) + Math.abs(ev.clientY - sy) <= 4) return;
+        if (!dragMoved) { dragMoved = true; panel.style.right = 'auto'; panel.style.bottom = 'auto'; }
         panel.style.left = clampX(ox + ev.clientX - sx) + 'px';
         panel.style.top = clampY(oy + ev.clientY - sy) + 'px';
       }
