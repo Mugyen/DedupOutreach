@@ -155,14 +155,20 @@
   // ── Position, opacity, drag, collapse ───────────────────────────────────
   function clampX(x) { return Math.min(Math.max(0, x), Math.max(0, window.innerWidth - (F.panel.offsetWidth || 60))); }
   function clampY(y) { return Math.min(Math.max(0, y), Math.max(0, window.innerHeight - (F.panel.offsetHeight || 60))); }
+  // Anchor to the corner of the bar's quadrant, so expanding always grows toward
+  // the screen centre (right half → grows left, bottom half → grows up, etc.)
+  // and never overflows off-screen.
+  function applyPos() {
+    var p = STATE.pos; if (!F.panel || !p || !p.hx) return;
+    var s = F.panel.style;
+    s.left = s.right = s.top = s.bottom = 'auto';
+    s[p.hx] = Math.min(Math.max(4, p.x), Math.max(4, window.innerWidth - 60)) + 'px';
+    s[p.hy] = Math.min(Math.max(4, p.y), Math.max(4, window.innerHeight - 60)) + 'px';
+  }
   function applyChrome() {
     if (!F.panel) return;
     F.panel.style.opacity = String(STATE.opacity);
-    if (STATE.pos && typeof STATE.pos.left === 'number') {
-      F.panel.style.left = clampX(STATE.pos.left) + 'px';
-      F.panel.style.top = clampY(STATE.pos.top) + 'px';
-      F.panel.style.right = 'auto'; F.panel.style.bottom = 'auto';
-    }
+    applyPos();
   }
   function toggleCollapse() {
     collapsed = !collapsed;
@@ -185,7 +191,13 @@
       function mu() {
         document.removeEventListener('mousemove', mm); document.removeEventListener('mouseup', mu);
         if (dragMoved) {
-          STATE.pos = { left: parseInt(panel.style.left, 10), top: parseInt(panel.style.top, 10) };
+          var rect = panel.getBoundingClientRect(), vw = window.innerWidth, vh = window.innerHeight;
+          var cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
+          STATE.pos = {                              // store as distance from the nearest corner
+            hx: cx < vw / 2 ? 'left' : 'right', x: cx < vw / 2 ? rect.left : vw - rect.right,
+            hy: cy < vh / 2 ? 'top' : 'bottom', y: cy < vh / 2 ? rect.top : vh - rect.bottom
+          };
+          applyPos();                                // re-anchor by corner (clears the transient left/top)
           chrome.storage.local.set({ barPos: STATE.pos });
         } else {
           toggleCollapse();          // a tap (no drag) on the header minimizes/expands
