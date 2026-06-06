@@ -173,9 +173,8 @@
     applyPos();
   }
   // Anchor by the corner of whatever quadrant the given rect sits in, then apply.
-  // Used on drag-end, on collapse (rect = circle at tap), and on expand (rect =
-  // the circle's CURRENT position) — so expand direction is derived from where the
-  // circle physically is, never from possibly-stale stored state.
+  // Used on drag-end and on collapse/expand — the corner is the fixed pivot, so
+  // the circle and the panel always share it and toggling never drifts.
   function anchorFromRect(rect) {
     var vw = window.innerWidth, vh = window.innerHeight;
     var cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
@@ -186,20 +185,14 @@
     applyPos();
     chrome.storage.local.set({ barPos: STATE.pos });
   }
-  function toggleCollapse(tapX, tapY) {
-    if (collapsed) {                                  // EXPAND
-      var cr = F.panel.getBoundingClientRect();       // where the circle is right now
-      collapsed = false; F.panel.classList.remove('collapsed');
-      anchorFromRect(cr);                             // grow inward from the circle's quadrant
-    } else {                                          // COLLAPSE
-      collapsed = true; F.panel.classList.add('collapsed');
-      if (tapX != null) {                             // drop the circle centred on the tap point
-        var sz = 48, vw = window.innerWidth, vh = window.innerHeight;
-        var l = Math.min(Math.max(4, tapX - sz / 2), vw - sz - 4);
-        var t = Math.min(Math.max(4, tapY - sz / 2), vh - sz - 4);
-        anchorFromRect({ left: l, top: t, right: l + sz, bottom: t + sz, width: sz, height: sz });
-      }
-    }
+  // Collapse ⇄ expand around the quadrant corner of wherever it sits now: the
+  // circle forms at that corner and expanding grows back inward from it. That
+  // corner is the fixed pivot, so it always returns to the same place.
+  function toggleCollapse() {
+    var cr = F.panel.getBoundingClientRect();         // where it is right now
+    collapsed = !collapsed;
+    F.panel.classList.toggle('collapsed', collapsed);
+    anchorFromRect(cr);                               // pivot on this quadrant's corner
     if (F.head) F.head.title = 'Drag to move · click to ' + (collapsed ? 'expand' : 'minimize');
     chrome.storage.local.set({ barCollapsed: collapsed });
   }
@@ -220,7 +213,7 @@
         if (dragMoved) {
           anchorFromRect(panel.getBoundingClientRect());   // re-anchor by corner (clears transient left/top)
         } else {
-          toggleCollapse(sx, sy);    // a tap (no drag) toggles; collapse forms the circle at the tap point
+          toggleCollapse();          // a tap (no drag) collapses/expands around the quadrant corner
         }
       }
       document.addEventListener('mousemove', mm);
