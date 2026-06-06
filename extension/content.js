@@ -140,10 +140,12 @@
 
     F.save = elt('button', 'dm-btn', 'Log contact'); F.save.onclick = save; body.appendChild(F.save);
     F.msg = elt('div', 'dm-msg'); body.appendChild(F.msg);
+    F.foot = elt('div', 'dm-foot'); F.foot.title = 'Drag to move · click to minimize'; body.appendChild(F.foot);
 
     document.body.appendChild(p);
     applyChrome();                 // opacity + saved position
     makeDraggable(p, head);        // drag header to move; tap header to minimize/expand
+    makeDraggable(p, F.foot);      // …and the footer does the same (collapse at the tap point)
     [F.link, F.phone, F.email].forEach(function (f) {
       f.el.addEventListener('input', function () { dirty = true; if (STATE.active) debouncedCheck(); });
     });

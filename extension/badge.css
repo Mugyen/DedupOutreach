@@ -68,3 +68,10 @@
 #dedup-panel .dm-btn.ghost{width:auto;background:#fff;color:#0a0a0a;border:1px solid #d4d4d4;padding:7px 14px;font-size:12px}
 #dedup-panel .dm-btn.ghost:hover{background:#f4f4f4;opacity:1}
 #dedup-panel .dm-msg{font-size:11.5px;color:#6b6b6b;min-height:15px;margin-top:7px;font-weight:600;text-align:center}
+/* Footer grab strip — drag to move, tap to minimize (same as the header). */
+#dedup-panel .dm-foot{margin:8px -13px -13px;padding:9px 0;cursor:grab;user-select:none;
+  border-top:1px solid #eee;display:flex;justify-content:center}
+#dedup-panel .dm-foot:active{cursor:grabbing}
+#dedup-panel .dm-foot:before{content:"";width:34px;height:4px;border-radius:3px;background:#d4d4d4}
+#dedup-panel .dm-foot:hover:before{background:#9a9a9a}
+#dedup-panel.collapsed .dm-foot{display:none}
