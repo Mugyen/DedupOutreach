@@ -12,16 +12,16 @@
  */
 (function () {
   if (window.top !== window) return;                 // don't run in iframes
-  var STATE = { contacts: [], settings: {}, me: '', active: true, enabled: true, stages: ['New'], sources: [] };
-  var F = {}, dirty = false, collapsed = false, checkSeq = 0, lastDetectKey = null, hooked = false;
+  var STATE = { contacts: [], settings: {}, me: '', active: true, enabled: true, stages: ['New'], sources: [], opacity: 1, pos: null };
+  var F = {}, dirty = false, collapsed = false, checkSeq = 0, lastDetectKey = null, hooked = false, dragMoved = false;
 
-  chrome.storage.local.get(['contacts', 'settings', 'me', 'activeMode', 'barEnabled', 'barCollapsed'], function (s) {
+  chrome.storage.local.get(['contacts', 'settings', 'me', 'activeMode', 'barEnabled', 'barCollapsed', 'barOpacity', 'barPos'], function (s) {
     apply(s); collapsed = !!s.barCollapsed;
     if (STATE.enabled) { build(); hook(); refreshFromPage(); }
   });
   chrome.storage.onChanged.addListener(function (ch) {
     var s = {};
-    ['contacts', 'settings', 'me', 'activeMode', 'barEnabled'].forEach(function (k) { if (ch[k]) s[k] = ch[k].newValue; });
+    ['contacts', 'settings', 'me', 'activeMode', 'barEnabled', 'barOpacity', 'barPos'].forEach(function (k) { if (ch[k]) s[k] = ch[k].newValue; });
     apply(s);
     if (ch.barEnabled !== undefined) {                 // global on/off
       if (STATE.enabled) { build(); hook(); lastDetectKey = null; dirty = false; refreshFromPage(); }
@@ -29,6 +29,7 @@
       return;
     }
     if (!STATE.enabled) return;
+    if (ch.barOpacity !== undefined || ch.barPos !== undefined) applyChrome();   // live opacity/position
     if (ch.settings && F.source) { fillSelect(F.source.el, [''].concat(STATE.sources), F.source.get(), true); fillSelect(F.status.el, STATE.stages, F.status.get(), false); }
     if (ch.activeMode !== undefined) { lastDetectKey = null; dirty = false; refreshFromPage(); }  // re-render on mode switch
     else if (ch.contacts) check();
@@ -39,6 +40,8 @@
     if (s.me !== undefined) STATE.me = s.me || '';
     if (s.activeMode !== undefined) STATE.active = s.activeMode !== false;
     if (s.barEnabled !== undefined) STATE.enabled = s.barEnabled !== false;
+    if (s.barOpacity !== undefined) STATE.opacity = (typeof s.barOpacity === 'number') ? s.barOpacity : 1;
+    if (s.barPos !== undefined) STATE.pos = s.barPos || null;
     STATE.stages = list(STATE.settings.stages, 'New');
     STATE.sources = list(STATE.settings.sources, 'LinkedIn,Email,Phone,WhatsApp,Slack,Twitter/X,Reddit,Other');
   }
@@ -104,16 +107,16 @@
     if (!STATE.enabled) return;                       // never show while disabled
     if (document.getElementById('dedup-panel')) return;
     var p = elt('div', 'dm-panel' + (collapsed ? ' collapsed' : '')); p.id = 'dedup-panel';
+    p.dataset.status = 'idle';
+    F.panel = p;
 
     var head = elt('div', 'dm-h');
     head.appendChild(elt('span', 'dm-logo', 'D'));
     head.appendChild(elt('span', 'dm-name', 'DedupManager'));
     F.mode = elt('span', 'dm-mode'); head.appendChild(F.mode);
-    var toggle = elt('span', 'dm-min', collapsed ? '+' : '–');
-    toggle.onclick = function () { collapsed = !collapsed; p.classList.toggle('collapsed', collapsed); toggle.textContent = collapsed ? '+' : '–'; chrome.storage.local.set({ barCollapsed: collapsed }); };
-    head.appendChild(toggle);
-    head.onclick = function (e) { if (collapsed && e.target !== toggle) { collapsed = false; p.classList.remove('collapsed'); toggle.textContent = '–'; chrome.storage.local.set({ barCollapsed: false }); } };
+    head.title = 'Drag to move · click to ' + (collapsed ? 'expand' : 'minimize');
     p.appendChild(head);
+    F.head = head;
 
     var body = elt('div', 'dm-b'); p.appendChild(body);
     F.chip = elt('div', 'dm-chip'); body.appendChild(F.chip);
@@ -139,11 +142,57 @@
     F.msg = elt('div', 'dm-msg'); body.appendChild(F.msg);
 
     document.body.appendChild(p);
+    applyChrome();                 // opacity + saved position
+    makeDraggable(p, head);        // drag header to move; tap header to minimize/expand
     [F.link, F.phone, F.email].forEach(function (f) {
       f.el.addEventListener('input', function () { dirty = true; if (STATE.active) debouncedCheck(); });
     });
     [F.name, F.company].forEach(function (f) {           // editing these must not be clobbered
       f.el.addEventListener('input', function () { dirty = true; });
+    });
+  }
+
+  // ── Position, opacity, drag, collapse ───────────────────────────────────
+  function clampX(x) { return Math.min(Math.max(0, x), Math.max(0, window.innerWidth - (F.panel.offsetWidth || 60))); }
+  function clampY(y) { return Math.min(Math.max(0, y), Math.max(0, window.innerHeight - (F.panel.offsetHeight || 60))); }
+  function applyChrome() {
+    if (!F.panel) return;
+    F.panel.style.opacity = String(STATE.opacity);
+    if (STATE.pos && typeof STATE.pos.left === 'number') {
+      F.panel.style.left = clampX(STATE.pos.left) + 'px';
+      F.panel.style.top = clampY(STATE.pos.top) + 'px';
+      F.panel.style.right = 'auto'; F.panel.style.bottom = 'auto';
+    }
+  }
+  function toggleCollapse() {
+    collapsed = !collapsed;
+    F.panel.classList.toggle('collapsed', collapsed);
+    if (F.head) F.head.title = 'Drag to move · click to ' + (collapsed ? 'expand' : 'minimize');
+    chrome.storage.local.set({ barCollapsed: collapsed });
+  }
+  function makeDraggable(panel, handle) {
+    handle.addEventListener('mousedown', function (e) {
+      if (e.button !== 0 || e.target.closest('input,select,textarea,button,a,summary')) return;
+      e.preventDefault();
+      var r = panel.getBoundingClientRect(), ox = r.left, oy = r.top, sx = e.clientX, sy = e.clientY;
+      dragMoved = false;
+      panel.style.left = ox + 'px'; panel.style.top = oy + 'px'; panel.style.right = 'auto'; panel.style.bottom = 'auto';
+      function mm(ev) {
+        if (Math.abs(ev.clientX - sx) + Math.abs(ev.clientY - sy) > 4) dragMoved = true;
+        panel.style.left = clampX(ox + ev.clientX - sx) + 'px';
+        panel.style.top = clampY(oy + ev.clientY - sy) + 'px';
+      }
+      function mu() {
+        document.removeEventListener('mousemove', mm); document.removeEventListener('mouseup', mu);
+        if (dragMoved) {
+          STATE.pos = { left: parseInt(panel.style.left, 10), top: parseInt(panel.style.top, 10) };
+          chrome.storage.local.set({ barPos: STATE.pos });
+        } else {
+          toggleCollapse();          // a tap (no drag) on the header minimizes/expands
+        }
+      }
+      document.addEventListener('mousemove', mm);
+      document.addEventListener('mouseup', mu);
     });
   }
   function field(parent, label, ph, big) {
@@ -222,7 +271,11 @@
       setChip('ok', 'Not in CRM yet'); F.save.textContent = 'Log contact as ' + (STATE.me || '—');
     }
   }
-  function setChip(kind, text) { if (!F.chip) return; F.chip.className = 'dm-chip ' + kind; F.chip.textContent = text; }
+  function setChip(kind, text) {
+    if (F.panel) F.panel.dataset.status = kind;     // drives the collapsed circle colour
+    if (!F.chip) return;
+    F.chip.className = 'dm-chip ' + kind; F.chip.textContent = text;
+  }
 
   function save() {
     if (!STATE.me) { F.msg.textContent = 'Pick your name in the popup first.'; return; }

@@ -5,20 +5,34 @@
   box-shadow:0 10px 34px rgba(0,0,0,.16);
   font-family:'Hanken Grotesk',system-ui,-apple-system,sans-serif; font-size:13px; line-height:1.45;
   animation:dm-in .16s ease-out; overflow:hidden;
+  transition:opacity .15s ease;
 }
+/* whatever transparency is configured, go fully solid while you're using it */
+#dedup-panel.dm-panel:hover{opacity:1!important}
 @keyframes dm-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){#dedup-panel.dm-panel{animation:none}}
 
-#dedup-panel .dm-h{display:flex;align-items:center;gap:8px;padding:11px 13px;cursor:default;border-bottom:1px solid #eee}
-#dedup-panel.collapsed .dm-h{border-bottom:0;cursor:pointer}
+#dedup-panel .dm-h{display:flex;align-items:center;gap:8px;padding:11px 13px;cursor:grab;border-bottom:1px solid #eee;user-select:none}
+#dedup-panel .dm-h:active{cursor:grabbing}
 #dedup-panel .dm-logo{width:22px;height:22px;border-radius:7px;background:#0a0a0a;
   color:#fff;font-weight:800;font-size:12px;display:grid;place-items:center;flex:none}
 #dedup-panel .dm-name{font-weight:800;font-size:13px;letter-spacing:-.01em;flex:1}
 #dedup-panel .dm-mode{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;padding:2px 7px;border-radius:20px;border:1px solid transparent}
 #dedup-panel .dm-mode.on{background:#0a0a0a;color:#fff}
 #dedup-panel .dm-mode.off{background:#fff;color:#0a0a0a;border-color:#d4d4d4}
-#dedup-panel .dm-min{cursor:pointer;color:#9a9a9a;font-size:17px;line-height:1;width:18px;text-align:center;font-weight:700}
-#dedup-panel .dm-min:hover{color:#0a0a0a}
+
+/* ── Collapsed = a compact draggable status circle ──────────────────── */
+#dedup-panel.dm-panel.collapsed{
+  width:48px;height:48px;padding:0;border:0;border-radius:50%;overflow:visible;
+  box-shadow:0 4px 16px rgba(0,0,0,.28);
+}
+#dedup-panel.collapsed .dm-h{padding:0;border:0;width:48px;height:48px;justify-content:center}
+#dedup-panel.collapsed .dm-name,
+#dedup-panel.collapsed .dm-mode{display:none}
+#dedup-panel.collapsed .dm-logo{width:48px;height:48px;border-radius:50%;font-size:20px;transition:background .15s}
+#dedup-panel.collapsed[data-status="ok"]   .dm-logo{background:#0e9f6e}  /* green  = not in CRM */
+#dedup-panel.collapsed[data-status="warn"] .dm-logo{background:#d92d20}  /* red    = already in CRM */
+#dedup-panel.collapsed[data-status="idle"] .dm-logo{background:#9a9a9a}  /* grey   = unknown / can't check */
 #dedup-panel.collapsed .dm-b{display:none}
 
 #dedup-panel .dm-b{padding:12px 13px 13px}
