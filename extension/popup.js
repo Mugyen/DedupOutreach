@@ -26,7 +26,7 @@ function fillTeam(team, selected) {
 
 function load() {
   chrome.storage.local.get(
-    ['me', 'apiUrl', 'apiKey', 'activeMode', 'barEnabled', 'barOpacity', 'barFixed', 'lastSync', 'contacts', 'team', 'sheetUrl'],
+    ['me', 'apiUrl', 'apiKey', 'activeMode', 'barEnabled', 'barOpacity', 'lastSync', 'contacts', 'team', 'sheetUrl'],
     function (s) {
       var team = getTeam(s.team);
       // Default "me" to the first teammate and PERSIST it, so the content
@@ -36,7 +36,6 @@ function load() {
       if (s.me !== me) chrome.storage.local.set({ me: me });
       $('enabled').checked = s.barEnabled !== false;
       $('activeRow').style.opacity = $('enabled').checked ? '1' : '.45';
-      $('fixed').checked = s.barFixed !== false;     // locked by default
       $('opacity').value = Math.round((typeof s.barOpacity === 'number' ? s.barOpacity : 1) * 100);
       setLink('openDash', s.apiUrl);
       setLink('openSheet', s.sheetUrl);
@@ -95,11 +94,6 @@ $('enabled').addEventListener('change', function () {
 $('active').addEventListener('change', function () {
   chrome.storage.local.set({ activeMode: $('active').checked });
   msg($('active').checked ? 'Auto mode on' : 'Manual mode');
-});
-
-$('fixed').addEventListener('change', function () {
-  chrome.storage.local.set({ barFixed: $('fixed').checked });
-  msg($('fixed').checked ? 'Position locked — bar stays put' : 'Unlocked — drag to move');
 });
 
 $('opacity').addEventListener('input', function () {

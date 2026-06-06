@@ -12,16 +12,16 @@
  */
 (function () {
   if (window.top !== window) return;                 // don't run in iframes
-  var STATE = { contacts: [], settings: {}, me: '', active: true, enabled: true, stages: ['New'], sources: [], opacity: 1, pos: null, fixed: true };
+  var STATE = { contacts: [], settings: {}, me: '', active: true, enabled: true, stages: ['New'], sources: [], opacity: 1, pos: null };
   var F = {}, dirty = false, collapsed = false, checkSeq = 0, lastDetectKey = null, hooked = false, dragMoved = false;
 
-  chrome.storage.local.get(['contacts', 'settings', 'me', 'activeMode', 'barEnabled', 'barCollapsed', 'barOpacity', 'barPos', 'barFixed'], function (s) {
+  chrome.storage.local.get(['contacts', 'settings', 'me', 'activeMode', 'barEnabled', 'barCollapsed', 'barOpacity', 'barPos'], function (s) {
     apply(s); collapsed = !!s.barCollapsed;
     if (STATE.enabled) { build(); hook(); refreshFromPage(); }
   });
   chrome.storage.onChanged.addListener(function (ch) {
     var s = {};
-    ['contacts', 'settings', 'me', 'activeMode', 'barEnabled', 'barOpacity', 'barPos', 'barFixed'].forEach(function (k) { if (ch[k]) s[k] = ch[k].newValue; });
+    ['contacts', 'settings', 'me', 'activeMode', 'barEnabled', 'barOpacity', 'barPos'].forEach(function (k) { if (ch[k]) s[k] = ch[k].newValue; });
     apply(s);
     if (ch.barEnabled !== undefined) {                 // global on/off
       if (STATE.enabled) { build(); hook(); lastDetectKey = null; dirty = false; refreshFromPage(); }
@@ -30,7 +30,6 @@
     }
     if (!STATE.enabled) return;
     if (ch.barOpacity !== undefined || ch.barPos !== undefined) applyChrome();   // live opacity/position
-    if (ch.barFixed !== undefined) applyLock();                                  // live lock/unlock
     if (ch.settings && F.source) { fillSelect(F.source.el, [''].concat(STATE.sources), F.source.get(), true); fillSelect(F.status.el, STATE.stages, F.status.get(), false); }
     if (ch.activeMode !== undefined) { lastDetectKey = null; dirty = false; refreshFromPage(); }  // re-render on mode switch
     else if (ch.contacts) check();
@@ -43,7 +42,6 @@
     if (s.barEnabled !== undefined) STATE.enabled = s.barEnabled !== false;
     if (s.barOpacity !== undefined) STATE.opacity = (typeof s.barOpacity === 'number') ? s.barOpacity : 1;
     if (s.barPos !== undefined) STATE.pos = s.barPos || null;
-    if (s.barFixed !== undefined) STATE.fixed = s.barFixed !== false;
     STATE.stages = list(STATE.settings.stages, 'New');
     STATE.sources = list(STATE.settings.sources, 'LinkedIn,Email,Phone,WhatsApp,Slack,Twitter/X,Reddit,Other');
   }
@@ -148,7 +146,6 @@
     applyChrome();                 // opacity + saved position
     makeDraggable(p, head);        // drag header to move; tap header to minimize/expand
     makeDraggable(p, F.foot);      // …and the footer does the same (collapse at the tap point)
-    applyLock();                   // honour the locked/unlocked preference
     [F.link, F.phone, F.email].forEach(function (f) {
       f.el.addEventListener('input', function () { dirty = true; if (STATE.active) debouncedCheck(); });
     });
@@ -175,17 +172,6 @@
     F.panel.style.opacity = String(STATE.opacity);
     applyPos();
   }
-  // Locked = bar won't drag and minimizes in place (to its fixed anchor corner),
-  // not to the tap point. Unlocked = drag anywhere, collapse at the tap point.
-  function applyLock() {
-    if (!F.panel) return;
-    F.panel.classList.toggle('locked', STATE.fixed);
-    var verb = collapsed ? 'expand' : 'minimize';
-    var t = STATE.fixed ? 'Click to ' + verb + ' · position locked'
-                        : 'Drag to move · click to ' + verb;
-    if (F.head) F.head.title = t;
-    if (F.foot) F.foot.title = t;
-  }
   // Anchor by the corner of whatever quadrant the given rect sits in, then apply.
   // Used on drag-end, on collapse (rect = circle at tap), and on expand (rect =
   // the circle's CURRENT position) — so expand direction is derived from where the
@@ -201,15 +187,11 @@
     chrome.storage.local.set({ barPos: STATE.pos });
   }
   function toggleCollapse(tapX, tapY) {
-    if (STATE.fixed) {                                // LOCKED → toggle in place, fixed anchor
-      collapsed = !collapsed;
-      F.panel.classList.toggle('collapsed', collapsed);
-      applyPos();                                     // circle ↔ panel share the same corner
-    } else if (collapsed) {                           // EXPAND from where the circle is
+    if (collapsed) {                                  // EXPAND
       var cr = F.panel.getBoundingClientRect();       // where the circle is right now
       collapsed = false; F.panel.classList.remove('collapsed');
       anchorFromRect(cr);                             // grow inward from the circle's quadrant
-    } else {                                          // COLLAPSE to the tap point
+    } else {                                          // COLLAPSE
       collapsed = true; F.panel.classList.add('collapsed');
       if (tapX != null) {                             // drop the circle centred on the tap point
         var sz = 48, vw = window.innerWidth, vh = window.innerHeight;
@@ -218,21 +200,15 @@
         anchorFromRect({ left: l, top: t, right: l + sz, bottom: t + sz, width: sz, height: sz });
       }
     }
-    applyLock();                                      // refresh handle titles for the new state
+    if (F.head) F.head.title = 'Drag to move · click to ' + (collapsed ? 'expand' : 'minimize');
     chrome.storage.local.set({ barCollapsed: collapsed });
   }
   function makeDraggable(panel, handle) {
     handle.addEventListener('mousedown', function (e) {
       if (e.button !== 0 || e.target.closest('input,select,textarea,button,a,summary')) return;
       e.preventDefault();
-      var sx = e.clientX, sy = e.clientY;
+      var r = panel.getBoundingClientRect(), ox = r.left, oy = r.top, sx = e.clientX, sy = e.clientY;
       dragMoved = false;
-      if (STATE.fixed) {                                 // locked → no dragging; a click toggles in place
-        var up = function () { document.removeEventListener('mouseup', up); toggleCollapse(sx, sy); };
-        document.addEventListener('mouseup', up);
-        return;
-      }
-      var r = panel.getBoundingClientRect(), ox = r.left, oy = r.top;
       panel.style.left = ox + 'px'; panel.style.top = oy + 'px'; panel.style.right = 'auto'; panel.style.bottom = 'auto';
       function mm(ev) {
         if (Math.abs(ev.clientX - sx) + Math.abs(ev.clientY - sy) > 4) dragMoved = true;

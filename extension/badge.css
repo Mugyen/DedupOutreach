@@ -14,11 +14,6 @@
 
 #dedup-panel .dm-h{display:flex;align-items:center;gap:8px;padding:11px 13px;cursor:grab;border-bottom:1px solid #eee;user-select:none}
 #dedup-panel .dm-h:active{cursor:grabbing}
-/* locked = no dragging; the handles just toggle minimize/expand in place */
-#dedup-panel.dm-panel.locked .dm-h,
-#dedup-panel.dm-panel.locked .dm-h:active,
-#dedup-panel.dm-panel.locked .dm-foot,
-#dedup-panel.dm-panel.locked .dm-foot:active{cursor:pointer}
 #dedup-panel .dm-logo{width:22px;height:22px;border-radius:7px;background:#0a0a0a;
   color:#fff;font-weight:800;font-size:12px;display:grid;place-items:center;flex:none}
 #dedup-panel .dm-name{font-weight:800;font-size:13px;letter-spacing:-.01em;flex:1}
