@@ -7,8 +7,8 @@
   animation:dm-in .16s ease-out; overflow:hidden;
   transition:opacity .15s ease;
 }
-/* whatever transparency is configured, go fully solid while you're using it */
-#dedup-panel.dm-panel:hover{opacity:1!important}
+/* only the collapsed circle goes solid on hover; the expanded pane keeps its set opacity */
+#dedup-panel.dm-panel.collapsed:hover{opacity:1!important}
 @keyframes dm-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){#dedup-panel.dm-panel{animation:none}}
 
