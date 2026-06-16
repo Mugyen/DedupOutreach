@@ -57,7 +57,7 @@ clasp login
 You only need the **invite code** the setter-upper sent you.
 
 1. Open `chrome://extensions` → turn on **Developer mode** (top-right).
-2. Click **Load unpacked** → select the **`extension/`** folder.
+2. Click **Load unpacked** → select the **`DedupOutreach/extension/`** subfolder, PLEASE NOTE TO SELECT SUBFOLDER, this is common mistake that folks have.
 3. Click the **DedupManager** icon (pin it via the 🧩 menu) → **Connection settings** → paste the invite code into **"Paste team config"** → **Import config**.
 4. Set **I am → your name**. Leave **Show on-page bar** and **Auto mode** on. **Done** — you're on the same shared sheet, no Google login needed.
 
