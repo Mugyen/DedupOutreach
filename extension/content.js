@@ -127,7 +127,7 @@
     F.email = field(body, 'Email', 'jane@acme.com');
 
     F.checkRow = elt('div', 'dm-actions');
-    F.check = elt('button', 'dm-btn ghost', 'Check'); F.check.onclick = function () { check(); };
+    F.check = elt('button', 'dm-btn ghost', 'Check'); F.check.onclick = function () { check(true); };
     F.checkRow.appendChild(F.check);
     body.appendChild(F.checkRow);
 
@@ -264,7 +264,7 @@
       F.name.set(d.name || '');
       F.company.set(d.company || '');
       if (d.source) F.source.set(d.source);
-      check();                               // ONE live lookup per new profile
+      check(true);                           // ONE live lookup per new profile (hydrate from sheet on hit)
     } else {
       F.link.set(''); F.phone.set(''); F.email.set('');
       setChip('idle', 'No profile here — type to check');
@@ -278,8 +278,8 @@
   function hasId(c) { return c.link || c.phone || c.email; }
 
   var ct = null;
-  function debouncedCheck() { clearTimeout(ct); ct = setTimeout(check, 400); }
-  function check() {
+  function debouncedCheck() { clearTimeout(ct); ct = setTimeout(check, 400); }   // user typing → no hydrate
+  function check(hydrate) {
     var c = candidate();
     if (!hasId(c)) { matchId = null; setChip('idle', 'Type a link / phone / email'); return; }
     setChip('idle', 'Checking…');
@@ -287,19 +287,31 @@
     chrome.runtime.sendMessage({ type: 'check', fields: c }, function (r) {
       if (my !== checkSeq) return;                        // stale reply — ignore
       if (!r || r.ok !== true) { setChip('idle', 'Couldn’t reach CRM — saving still dedupes'); return; }
-      renderChip(r.hits || []);
+      renderChip(r.hits || [], hydrate);
     });
   }
-  function renderChip(hits) {
+  function renderChip(hits, hydrate) {
     if (hits.length) {
       var p = hits[0].contact;
       matchId = p.id || null;                         // remember WHICH person, so save merges into them
       setChip('warn', 'In CRM: ' + (p.name || 'match') + ' · ' + (p.added_by || '?') + ' · ' + (p.status || ''));
       F.save.textContent = 'Merge & update as ' + (STATE.me || '—');
+      if (hydrate && !dirty) hydrateFrom(p);           // show the STORED record, not page defaults
     } else {
       matchId = null;
       setChip('ok', 'Not in CRM yet'); F.save.textContent = 'Log contact as ' + (STATE.me || '—');
     }
+  }
+  // Fill the form from the matched CRM row so you see/edit the real values
+  // (their stage, source, name on file) instead of the page-scraped defaults.
+  function hydrateFrom(p) {
+    if (p.name) F.name.set(p.name);
+    if (p.company) F.company.set(p.company);
+    if (p.phone) F.phone.set(p.phone);
+    if (p.email) F.email.set(p.email);
+    if (p.link && !F.link.get()) F.link.set(p.link);
+    if (p.source) F.source.set(p.source);
+    if (p.status) F.status.set(p.status);
   }
   function setChip(kind, text) {
     if (F.panel) F.panel.dataset.status = kind;     // drives the collapsed circle colour
