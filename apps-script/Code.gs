@@ -95,6 +95,13 @@ function ensureHeaders(sh) {
     sh.getRange(1, 1, 1, MANAGED_HEADERS.length).setValues([MANAGED_HEADERS]);
     return MANAGED_HEADERS.slice();
   }
+  // A valid header row ALWAYS has an 'id' column. If row 1 has content but no
+  // 'id', the header was deleted/overwritten and data has leaked into it.
+  // Appending managed columns here would silently mis-map every row, so refuse
+  // loudly — a hard error is far safer than false "not in CRM" (→ double-outreach).
+  if (headers.indexOf('id') === -1)
+    throw new Error('Contacts header row looks corrupted (no "id" column). ' +
+      'Restore row 1 via Google Sheets → File → Version history, or set it to: ' + MANAGED_HEADERS.join(', '));
   cleanupDefaultSheet();
   headers = dropDeprecated(sh, headers);
   var missing = MANAGED_HEADERS.filter(function (h) { return headers.indexOf(h) === -1; });
