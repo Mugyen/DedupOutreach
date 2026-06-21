@@ -13,7 +13,7 @@
 (function () {
   if (window.top !== window) return;                 // don't run in iframes
   var STATE = { contacts: [], settings: {}, me: '', active: true, enabled: true, stages: ['New'], sources: [], opacity: 1, pos: null };
-  var F = {}, dirty = false, collapsed = false, checkSeq = 0, lastDetectKey = null, hooked = false, dragMoved = false;
+  var F = {}, dirty = false, collapsed = false, checkSeq = 0, lastDetectKey = null, hooked = false, dragMoved = false, matchId = null;
 
   chrome.storage.local.get(['contacts', 'settings', 'me', 'activeMode', 'barEnabled', 'barCollapsed', 'barOpacity', 'barPos'], function (s) {
     apply(s); collapsed = !!s.barCollapsed;
@@ -281,7 +281,7 @@
   function debouncedCheck() { clearTimeout(ct); ct = setTimeout(check, 400); }
   function check() {
     var c = candidate();
-    if (!hasId(c)) { setChip('idle', 'Type a link / phone / email'); return; }
+    if (!hasId(c)) { matchId = null; setChip('idle', 'Type a link / phone / email'); return; }
     setChip('idle', 'Checking…');
     var my = ++checkSeq;                                  // newer check supersedes an older one
     chrome.runtime.sendMessage({ type: 'check', fields: c }, function (r) {
@@ -293,9 +293,11 @@
   function renderChip(hits) {
     if (hits.length) {
       var p = hits[0].contact;
+      matchId = p.id || null;                         // remember WHICH person, so save merges into them
       setChip('warn', 'In CRM: ' + (p.name || 'match') + ' · ' + (p.added_by || '?') + ' · ' + (p.status || ''));
       F.save.textContent = 'Merge & update as ' + (STATE.me || '—');
     } else {
+      matchId = null;
       setChip('ok', 'Not in CRM yet'); F.save.textContent = 'Log contact as ' + (STATE.me || '—');
     }
   }
@@ -309,13 +311,18 @@
     if (!STATE.me) { F.msg.textContent = 'Pick your name in the popup first.'; return; }
     var c = candidate();
     if (!hasId(c) && !c.source) { F.msg.textContent = 'Add a link/phone/email or a source.'; return; }
+    if (matchId) c.match_id = matchId;                 // merge into the exact person the live check found
     F.save.disabled = true; F.msg.textContent = 'Saving…';
     chrome.runtime.sendMessage({ type: 'add', me: STATE.me, fields: c }, function (r) {
       F.save.disabled = false;
       if (r && r.ok) {
         F.msg.textContent = r.merged ? 'Merged ✓' : 'Logged ✓';
         ['link', 'phone', 'email', 'name', 'company'].forEach(function (k) { F[k].set(''); });
-        dirty = false; setTimeout(function () { F.msg.textContent = ''; refreshFromPage(); }, 1200);
+        dirty = false;
+        // Re-detect from the page so the fields refill and the chip re-checks
+        // (it'll now read "In CRM"). Without resetting the key, refreshFromPage
+        // early-returns on the same profile and leaves the fields blank.
+        setTimeout(function () { F.msg.textContent = ''; lastDetectKey = null; refreshFromPage(); }, 1200);
       } else { F.msg.textContent = 'Error: ' + ((r && r.error) || 'failed'); }
     });
   }

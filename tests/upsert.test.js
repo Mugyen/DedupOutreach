@@ -92,6 +92,19 @@ ok(!nope.ok, 'reject person with no identifier and no source');
 var srcOnly = ctx.upsertContact({ added_by: 'Rahul', name: 'Phone Friend', source: 'WhatsApp' });
 ok(srcOnly.ok, 'allow source-only person (e.g. met on WhatsApp)');
 
+// editing a descriptive field (name/company) on merge actually updates it
+ctx.apiSettings({ fuzzy_name_company: false });
+var er = ctx.upsertContact({ added_by: 'Vedant', link: 'linkedin.com/in/jane-doe', name: 'Jane D. Updated', company: 'NewCo' });
+var janeU = ctx.readContacts().find(function (x) { return String(x.link).indexOf('jane-doe') > -1; });
+ok(er.merged && janeU.name === 'Jane D. Updated' && janeU.company === 'NewCo', 'merge updates name/company when provided');
+
+// match_id merges into that exact person even with a blank identifier
+var mr = ctx.upsertContact({ added_by: 'Saksham', match_id: janeU.id, status: 'Won', source: 'SPC' });
+ok(mr.merged && mr.reason === 'id', 'match_id merges into the known person (no duplicate)');
+var janeW = ctx.readContacts().find(function (x) { return x.id === janeU.id; });
+ok(janeW.status === 'Won' && janeW.source === 'SPC', 'match_id merge applied status/source');
+ok(ctx.readContacts().filter(function (x) { return String(x.link).indexOf('jane-doe') > -1; }).length === 1, 'match_id did not create an orphan row');
+
 // delete a person by id
 var before = ctx.readContacts().length;
 var bobId = ctx.readContacts().find(function (x) { return x.name === 'Bob'; }).id;

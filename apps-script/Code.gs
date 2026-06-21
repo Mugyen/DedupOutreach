@@ -237,7 +237,7 @@ function firstStage(settings) {
 function upsertContact(body) {
   cleanBody(body);
   var hasIdentifier = ID_FIELDS.some(function (f) { return body[f]; });
-  if (!hasIdentifier && !body.source)
+  if (!hasIdentifier && !body.source && !body.match_id)
     return { ok: false, error: 'Add at least one identifier (phone / LinkedIn / email / handle) or a source.' };
 
   var settings = readSettings();
@@ -247,16 +247,28 @@ function upsertContact(body) {
 
   var cand = candidateFrom(body);
   var matchIdx = -1, reason = '';
-  for (var i = 0; i < rows.length; i++) {
-    var m = matchPerson(cand, rows[i], settings);
-    if (m.hit) { matchIdx = i; reason = m.reason; break; }
+  // If the caller already knows the person (live check returned an id), merge into
+  // that exact row — robust even if the identifier text normalizes slightly differently.
+  if (body.match_id) {
+    for (var j = 0; j < rows.length; j++) {
+      if (String(rows[j].id) === String(body.match_id)) { matchIdx = j; reason = 'id'; break; }
+    }
+  }
+  if (matchIdx < 0) {
+    for (var i = 0; i < rows.length; i++) {
+      var m = matchPerson(cand, rows[i], settings);
+      if (m.hit) { matchIdx = i; reason = m.reason; break; }
+    }
   }
 
   if (matchIdx > -1) {
     var row = rows[matchIdx];
     var patch = {};
-    ['name', 'company', 'phone', 'email', 'link'].forEach(function (f) {
-      if (!String(row[f] || '').trim() && body[f]) patch[f] = body[f]; // fill blanks only
+    ['phone', 'email', 'link'].forEach(function (f) {                 // identifiers: fill blanks, never clobber
+      if (!String(row[f] || '').trim() && body[f]) patch[f] = body[f];
+    });
+    ['name', 'company'].forEach(function (f) {                        // descriptive: update when provided
+      if (body[f] && String(body[f]) !== String(row[f] || '')) patch[f] = body[f];
     });
     if (body.status) patch.status = body.status;
     if (body.source) patch.source = body.source;     // reflect latest channel
